@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react'
-import api from './api/axios'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Signup from './pages/Signup'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
-  const [status, setStatus] = useState('checking...')
-
-  useEffect(() => {
-    api.get('/health')
-      .then((res) => setStatus(res.data.message))
-      .catch(() => setStatus('backend not reachable'))
-  }, [])
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-3xl font-bold text-blue-600">{status}</h1>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   )
 }
 
