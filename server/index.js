@@ -6,7 +6,13 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 
 // Middleware — must come BEFORE routes
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://ai-resume-analyzer-one-sage.vercel.app'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Health-check route
