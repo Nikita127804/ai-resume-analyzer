@@ -6,13 +6,28 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 
 // Middleware — must come BEFORE routes
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://ai-resume-analyzer-one-sage.vercel.app',
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://ai-resume-analyzer-one-sage.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    // allow requests with no origin (like Postman/Thunder Client)
+    if (!origin) return callback(null, true);
+
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app')
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
+
 app.use(express.json());
 
 // Health-check route
