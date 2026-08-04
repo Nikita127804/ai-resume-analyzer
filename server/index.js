@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
+
 
 // Middleware — must come BEFORE routes
 const allowedOrigins = [
@@ -28,7 +30,12 @@ app.use(cors({
   credentials: true
 }));
 
+
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
 // Health-check route
 app.get('/api/health', (req, res) => {
@@ -38,12 +45,25 @@ app.get('/api/health', (req, res) => {
 // Routes — must come AFTER middleware
 app.use('/api/auth', authRoutes);
 
+app.use('/api/resumes', resumeRoutes);
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   tls: true,
 })
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
+
+// Error handler for multer errors (file too large, wrong type, etc.)
+app.use((err, req, res, next) => {
+  if (err.message === 'Only PDF files are allowed') {
+    return res.status(400).json({ message: err.message });
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ message: 'File too large. Max size is 5MB.' });
+  }
+  next(err);
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
