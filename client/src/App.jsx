@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import Upload from './pages/Upload'
 import AnalysisDetail from './pages/AnalysisDetail'
@@ -14,6 +16,8 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/dashboard"
         element={
