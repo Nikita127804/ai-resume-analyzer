@@ -1,5 +1,6 @@
 const pdfParse = require('pdf-parse');
 const Resume = require('../models/Resume');
+const { extractSkills } = require('../utils/llm');
 
 exports.uploadResume = async (req, res) => {
   try {
@@ -19,10 +20,14 @@ exports.uploadResume = async (req, res) => {
       return res.status(400).json({ message: 'Could not extract text from this PDF. It may be a scanned image.' });
     }
 
+    console.log('Extracting skills from resume text using Gemini...');
+    const extractedSkills = await extractSkills(rawText.trim());
+
     const resume = await Resume.create({
       userId: req.userId,
       fileName: req.file.originalname,
       rawText: rawText.trim(),
+      extractedSkills,
     });
 
     res.status(201).json({
@@ -30,6 +35,7 @@ exports.uploadResume = async (req, res) => {
       resume: {
         id: resume._id,
         fileName: resume.fileName,
+        extractedSkills: resume.extractedSkills,
         uploadedAt: resume.createdAt,
       },
     });
