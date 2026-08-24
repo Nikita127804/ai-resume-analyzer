@@ -1,5 +1,5 @@
 const JobDescription = require('../models/JobDescription');
-const { extractSkills } = require('../utils/llm');
+const { extractSkills, generateEmbedding } = require('../utils/llm');
 
 exports.createJob = async (req, res) => {
   try {
@@ -9,8 +9,9 @@ exports.createJob = async (req, res) => {
       return res.status(400).json({ message: 'Title and job description text are required' });
     }
 
-    console.log('Extracting skills from job description text using Gemini...');
+    console.log('Extracting skills & generating embedding using Gemini...');
     const extractedSkills = await extractSkills(rawText.trim());
+    const embedding = await generateEmbedding(rawText.trim());
 
     const job = await JobDescription.create({
       userId: req.userId,
@@ -18,6 +19,7 @@ exports.createJob = async (req, res) => {
       company: company || '',
       rawText: rawText.trim(),
       extractedSkills,
+      embedding,
     });
 
     res.status(201).json({
@@ -32,7 +34,7 @@ exports.createJob = async (req, res) => {
 exports.getJobs = async (req, res) => {
   try {
     const jobs = await JobDescription.find({ userId: req.userId })
-      .select('-rawText')
+      .select('-rawText -embedding')
       .sort({ createdAt: -1 });
 
     res.json(jobs);

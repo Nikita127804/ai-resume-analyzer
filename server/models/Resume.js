@@ -18,6 +18,10 @@ const resumeSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  embedding: {
+    type: [Number],
+    default: [],
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Resume', resumeSchema);

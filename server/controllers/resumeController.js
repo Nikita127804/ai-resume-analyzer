@@ -1,17 +1,15 @@
 const pdfParse = require('pdf-parse');
 const Resume = require('../models/Resume');
-const { extractSkills } = require('../utils/llm');
+const { extractSkills, generateEmbedding } = require('../utils/llm');
 
 exports.uploadResume = async (req, res) => {
   try {
     console.log('Upload request received');
-    console.log('req.file:', req.file);
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
     console.log('Starting PDF parse...');
-    // req.file.buffer contains the raw PDF data (since we used memoryStorage)
     const pdfData = await pdfParse(req.file.buffer);
     console.log('PDF parse complete');
     const rawText = pdfData.text;
@@ -20,14 +18,16 @@ exports.uploadResume = async (req, res) => {
       return res.status(400).json({ message: 'Could not extract text from this PDF. It may be a scanned image.' });
     }
 
-    console.log('Extracting skills from resume text using Gemini...');
+    console.log('Extracting skills & generating embedding using Gemini...');
     const extractedSkills = await extractSkills(rawText.trim());
+    const embedding = await generateEmbedding(rawText.trim());
 
     const resume = await Resume.create({
       userId: req.userId,
       fileName: req.file.originalname,
       rawText: rawText.trim(),
       extractedSkills,
+      embedding,
     });
 
     res.status(201).json({
@@ -44,11 +44,10 @@ exports.uploadResume = async (req, res) => {
   }
 };
 
-// Get all resumes for the logged-in user
 exports.getResumes = async (req, res) => {
   try {
     const resumes = await Resume.find({ userId: req.userId })
-      .select('-rawText') // don't send full text back in list view, keep it lightweight
+      .select('-rawText -embedding')
       .sort({ createdAt: -1 });
 
     res.json(resumes);
@@ -57,7 +56,6 @@ exports.getResumes = async (req, res) => {
   }
 };
 
-// Get one resume with full text (for detail views later)
 exports.getResumeById = async (req, res) => {
   try {
     const resume = await Resume.findOne({ _id: req.params.id, userId: req.userId });
