@@ -5,7 +5,7 @@ import api from '../api/axios'
 
 function Upload() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('upload') // 'upload' | 'job' | 'analyze' | 'rank'
+  const [activeTab, setActiveTab] = useState('upload')
 
   // Data lists
   const [resumes, setResumes] = useState([])
@@ -46,8 +46,8 @@ function Upload() {
     setLoadingData(true)
     try {
       const [resumesRes, jobsRes] = await Promise.all([
-        api.get('/api/resumes'),
-        api.get('/api/jobs'),
+        api.get('/resumes'),
+        api.get('/jobs'),
       ])
       setResumes(resumesRes.data)
       setJobs(jobsRes.data)
@@ -76,14 +76,14 @@ function Upload() {
     formData.append('resume', file)
 
     try {
-      const res = await api.post('/api/resumes/upload', formData, {
+      const res = await api.post('/resumes/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setUploadSuccess(res.data)
       setFile(null)
       await fetchResumesAndJobs()
     } catch (err) {
-      setUploadError(err.response?.data?.message || 'Failed to upload resume')
+      setUploadError(err.response?.data?.message || err.message || 'Failed to upload resume')
     } finally {
       setUploading(false)
     }
@@ -97,7 +97,7 @@ function Upload() {
     setJobSuccess(null)
 
     try {
-      const res = await api.post('/api/jobs', {
+      const res = await api.post('/jobs', {
         title: jobTitle,
         company: jobCompany,
         rawText: jobText,
@@ -108,7 +108,7 @@ function Upload() {
       setJobText('')
       await fetchResumesAndJobs()
     } catch (err) {
-      setJobError(err.response?.data?.message || 'Failed to save job description')
+      setJobError(err.response?.data?.message || err.message || 'Failed to save job description')
     } finally {
       setSavingJob(false)
     }
@@ -124,13 +124,13 @@ function Upload() {
     setAnalyzeError('')
 
     try {
-      const res = await api.post('/api/analyze', {
+      const res = await api.post('/analyze', {
         resumeId: selectedResumeId,
         jobId: selectedJobId,
       })
       navigate(`/analysis/${res.data.analysis._id}`)
     } catch (err) {
-      setAnalyzeError(err.response?.data?.message || 'Failed to generate analysis')
+      setAnalyzeError(err.response?.data?.message || err.message || 'Failed to generate analysis')
       setAnalyzing(false)
     }
   }
@@ -143,12 +143,12 @@ function Upload() {
     setRankResults(null)
 
     try {
-      const res = await api.post('/api/analyze/rank', {
+      const res = await api.post('/analyze/rank', {
         resumeId: rankResumeId,
       })
       setRankResults(res.data)
     } catch (err) {
-      setRankError(err.response?.data?.message || 'Failed to rank job descriptions')
+      setRankError(err.response?.data?.message || err.message || 'Failed to rank job descriptions')
     } finally {
       setRanking(false)
     }
@@ -534,13 +534,13 @@ function Upload() {
                             <button
                               onClick={async () => {
                                 try {
-                                  const res = await api.post('/api/analyze', {
+                                  const res = await api.post('/analyze', {
                                     resumeId: rankResumeId,
                                     jobId: item.jobId,
                                   })
                                   navigate(`/analysis/${res.data.analysis._id}`)
                                 } catch (err) {
-                                  alert(err.response?.data?.message || 'Error creating analysis')
+                                  alert(err.response?.data?.message || err.message || 'Error creating analysis')
                                 }
                               }}
                               className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm"

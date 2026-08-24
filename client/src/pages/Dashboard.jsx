@@ -20,9 +20,9 @@ function Dashboard() {
     setLoading(true)
     try {
       const [analysesRes, resumesRes, jobsRes] = await Promise.all([
-        api.get('/api/analyze'),
-        api.get('/api/resumes'),
-        api.get('/api/jobs'),
+        api.get('/analyze'),
+        api.get('/resumes'),
+        api.get('/jobs'),
       ])
       setAnalyses(analysesRes.data)
       setResumesCount(resumesRes.data.length)
@@ -39,7 +39,7 @@ function Dashboard() {
     if (!window.confirm('Are you sure you want to delete this analysis report?')) return
 
     try {
-      await api.delete(`/api/analyze/${id}`)
+      await api.delete(`/analyze/${id}`)
       setAnalyses((prev) => prev.filter((a) => a._id !== id))
     } catch (err) {
       alert('Failed to delete analysis record')

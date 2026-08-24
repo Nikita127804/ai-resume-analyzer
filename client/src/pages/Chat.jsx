@@ -31,8 +31,8 @@ function Chat() {
   const fetchResumesAndJobs = async () => {
     try {
       const [resumesRes, jobsRes] = await Promise.all([
-        api.get('/api/resumes'),
-        api.get('/api/jobs'),
+        api.get('/resumes'),
+        api.get('/jobs'),
       ])
       setResumes(resumesRes.data)
       setJobs(jobsRes.data)
@@ -53,7 +53,7 @@ function Chat() {
     setLoading(true)
 
     try {
-      const res = await api.post('/api/chat', {
+      const res = await api.post('/chat', {
         resumeId: selectedResumeId,
         jobId: selectedJobId,
         question: questionText,

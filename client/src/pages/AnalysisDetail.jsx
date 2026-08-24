@@ -21,11 +21,11 @@ function AnalysisDetail() {
 
   const fetchAnalysis = async () => {
     try {
-      const res = await api.get(`/api/analyze/${id}`)
+      const res = await api.get(`/analyze/${id}`)
       setAnalysis(res.data)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load analysis')
-    } fontFinally: {
+    } finally {
       setLoading(false)
     }
   }
@@ -38,7 +38,7 @@ function AnalysisDetail() {
     setCopied(false)
 
     try {
-      const res = await api.post('/api/analyze/rewrite', {
+      const res = await api.post('/analyze/rewrite', {
         bulletPoint: inputBullet,
         jobId: analysis?.jobId?._id,
       })
