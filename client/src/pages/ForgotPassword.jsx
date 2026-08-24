@@ -3,35 +3,32 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
 function ForgotPassword() {
-  const [step, setStep] = useState(1) // 1: Send OTP, 2: Verify OTP & Reset
+  const [step, setStep] = useState(1) // 1: Send OTP, 2: Verify OTP & Reset, 3: Success
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [receivedOtp, setReceivedOtp] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [infoMsg, setInfoMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const navigate = useNavigate()
 
-  // STEP 1: SEND OTP
+  // STEP 1: SEND OTP TO GMAIL
   const handleSendOtp = async (e) => {
     e.preventDefault()
     if (!email.trim()) return
     setError('')
-    setSuccessMsg('')
+    setInfoMsg('')
     setLoading(true)
 
     try {
       const res = await api.post('/auth/send-otp', { email: email.trim() })
-      if (res.data.otp) {
-        setReceivedOtp(res.data.otp)
-      }
-      setSuccessMsg(res.data.message || 'OTP generated successfully!')
+      setInfoMsg(res.data.message || `A 6-digit OTP code has been sent to ${email.trim()}. Please check your Gmail inbox and spam folder.`)
       setStep(2)
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to send OTP')
+      setError(err.response?.data?.message || err.message || 'Failed to send OTP to Gmail')
     } finally {
       setLoading(false)
     }
@@ -41,7 +38,7 @@ function ForgotPassword() {
   const handleVerifyAndReset = async (e) => {
     e.preventDefault()
     if (!otp.trim()) {
-      setError('Please enter the 6-digit OTP code')
+      setError('Please enter the 6-digit OTP code received in your Gmail')
       return
     }
     if (newPassword.length < 6) {
@@ -63,9 +60,9 @@ function ForgotPassword() {
         newPassword,
       })
       setSuccessMsg(res.data.message || 'Password reset successfully!')
-      setStep(3) // Success step
+      setStep(3)
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Invalid or expired OTP')
+      setError(err.response?.data?.message || err.message || 'Invalid or expired OTP code')
     } finally {
       setLoading(false)
     }
@@ -77,15 +74,15 @@ function ForgotPassword() {
         {/* Header Icon & Title */}
         <div className="text-center mb-6">
           <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">
-            {step === 3 ? '🎉' : '🔐'}
+            {step === 3 ? '🎉' : '📧'}
           </div>
           <h2 className="text-2xl font-black text-gray-900">
             {step === 1 && 'Forgot Password?'}
-            {step === 2 && 'Enter OTP Code'}
+            {step === 2 && 'Check Your Gmail Inbox'}
             {step === 3 && 'Password Reset Complete'}
           </h2>
           <p className="text-xs text-gray-500 mt-1">
-            {step === 1 && 'Enter your email address to receive a 6-digit One-Time Password (OTP).'}
+            {step === 1 && 'Enter your email address to receive a 6-digit OTP in your Gmail inbox.'}
             {step === 2 && `Enter the 6-digit OTP code sent to ${email}`}
             {step === 3 && 'Your account password has been updated successfully.'}
           </p>
@@ -118,7 +115,7 @@ function ForgotPassword() {
               disabled={loading || !email.trim()}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow transition-colors disabled:opacity-50 text-sm"
             >
-              {loading ? 'Generating 6-Digit OTP...' : 'Send OTP Code'}
+              {loading ? 'Sending OTP to Gmail...' : 'Send OTP to Gmail'}
             </button>
 
             <div className="text-center pt-2">
@@ -132,19 +129,16 @@ function ForgotPassword() {
         {/* STEP 2: VERIFY OTP AND RESET PASSWORD FORM */}
         {step === 2 && (
           <form onSubmit={handleVerifyAndReset} className="space-y-4">
-            {/* Live OTP Notification Card */}
-            {receivedOtp && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3.5 rounded-xl text-center shadow-inner">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1">Your 6-Digit OTP Code:</p>
-                <p className="text-2xl font-black text-blue-900 tracking-widest bg-white py-1 px-4 rounded-lg inline-block shadow-sm border border-blue-100">
-                  {receivedOtp}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-1">Copy or enter this OTP in the field below.</p>
+            {/* Info Message */}
+            {infoMsg && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3.5 rounded-xl text-xs font-medium space-y-1">
+                <p className="font-bold">📩 OTP Sent to Gmail!</p>
+                <p>{infoMsg}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Enter 6-Digit OTP *</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Enter 6-Digit OTP from Gmail *</label>
               <input
                 type="text"
                 required
@@ -212,7 +206,7 @@ function ForgotPassword() {
         {step === 3 && (
           <div className="space-y-4">
             <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-xs text-center space-y-1">
-              <p className="font-bold text-sm">✅ Password Changed Successfully!</p>
+              <p className="font-bold text-sm">✅ Password Reset Complete!</p>
               <p>{successMsg}</p>
             </div>
 

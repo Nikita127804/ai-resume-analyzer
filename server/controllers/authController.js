@@ -72,7 +72,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// SEND OTP FOR FORGOT PASSWORD
+// SEND OTP FOR FORGOT PASSWORD TO GMAIL
 exports.sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -92,50 +92,55 @@ exports.sendOtp = async (req, res) => {
     user.resetOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save();
 
-    let emailSent = false;
+    // Check if EMAIL_USER and EMAIL_PASS exist in env
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
 
-    // Send real email if SMTP credentials are provided in environment
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (emailUser && emailPass) {
       try {
         const transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: emailUser,
+            pass: emailPass,
           },
         });
 
         await transporter.sendMail({
-          from: `"AI Resume Analyzer" <${process.env.EMAIL_USER}>`,
+          from: `"AI Resume Analyzer" <${emailUser}>`,
           to: user.email,
-          subject: 'Password Reset OTP Verification - AI Resume Analyzer',
+          subject: 'Your Password Reset OTP Code - AI Resume Analyzer',
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-              <h2 style="color: #2563eb; text-align: center;">AI Resume Analyzer</h2>
-              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;" />
-              <p style="color: #475569; font-size: 14px;">Hello <strong>${user.name}</strong>,</p>
-              <p style="color: #475569; font-size: 14px;">Your 6-digit One-Time Password (OTP) for resetting your account password is:</p>
-              <div style="background-color: #f1f5f9; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e3a8a;">${otp}</span>
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+              <h2 style="color: #2563eb; text-align: center; margin-bottom: 8px;">AI Resume Analyzer</h2>
+              <p style="text-align: center; color: #64748b; font-size: 13px; margin-top: 0;">Secure Password Reset</p>
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+              <p style="color: #334155; font-size: 14px;">Hello <strong>${user.name}</strong>,</p>
+              <p style="color: #334155; font-size: 14px;">Your 6-digit One-Time Password (OTP) code is:</p>
+              <div style="background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%); padding: 18px; text-align: center; border-radius: 12px; margin: 20px 0; border: 1px solid #bfdbfe;">
+                <span style="font-size: 34px; font-weight: 800; letter-spacing: 10px; color: #1e40af;">${otp}</span>
               </div>
-              <p style="color: #64748b; font-size: 12px; text-align: center;">This OTP is valid for 10 minutes. Do not share this code with anyone.</p>
+              <p style="color: #64748b; font-size: 12px; text-align: center;">This OTP is valid for 10 minutes. Please do not share this code with anyone.</p>
             </div>
           `,
         });
-        emailSent = true;
-      } catch (mailErr) {
-        console.error('Email sending error:', mailErr.message);
-      }
-    }
 
-    res.status(200).json({
-      message: emailSent
-        ? 'OTP sent to your email address successfully!'
-        : 'OTP generated successfully!',
-      emailSent,
-      otp, // Provided for instant UI verification & testing
-      email: user.email,
-    });
+        return res.status(200).json({
+          message: `OTP sent to ${user.email} successfully! Please check your inbox and spam folder.`,
+        });
+      } catch (mailErr) {
+        console.error('Nodemailer error:', mailErr.message);
+        return res.status(500).json({
+          message: 'Failed to send OTP email. Please ensure EMAIL_USER and EMAIL_PASS environment variables are configured on Render.',
+        });
+      }
+    } else {
+      // Log for server admin if env variables not set yet
+      console.log(`[OTP DEBUG LOG] Target Email: ${user.email} | Generated OTP: ${otp}`);
+      return res.status(200).json({
+        message: `OTP generated for ${user.email}. (To receive real Gmail emails, set EMAIL_USER & EMAIL_PASS on Render)`,
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -177,6 +182,6 @@ exports.verifyOtpAndResetPassword = async (req, res) => {
   }
 };
 
-// FORGOT PASSWORD (Legacy Token Support)
+// Legacy support
 exports.forgotPassword = exports.sendOtp;
 exports.resetPassword = exports.verifyOtpAndResetPassword;
