@@ -1,0 +1,9 @@
+{
+  "name": "ai-resume-analyzer-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "cd server && npm install",
+    "start": "node server/index.js"
+  }
+}
