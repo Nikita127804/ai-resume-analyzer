@@ -2,13 +2,21 @@
 > Full-Stack AI-Powered Resume & Job Description Matcher, ATS Friendliness Checker, and RAG Career Advisor (B.Tech CSE Final Year Project).
 
 [![Frontend: Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://ai-resume-analyzer-one-sage.vercel.app)
-[![Backend: Render](https://img.shields.io/badge/Backend-Render-blue?logo=render)](https://render.com)
+[![Backend: Render](https://img.shields.io/badge/Backend-Render-blue?logo=render)](https://ai-resume-analyzer-api-tn92.onrender.com)
 [![Database: MongoDB_Atlas](https://img.shields.io/badge/Database-MongoDB_Atlas-green?logo=mongodb)](https://mongodb.com)
 [![LLM: Google_Gemini](https://img.shields.io/badge/LLM-Google_Gemini-4285F4?logo=google)](https://aistudio.google.com)
 
 ---
 
-## 🌟 Key Features
+## 🌐 Live Production Deployment Links
+
+- **🌐 Live Web Application (Vercel)**: [https://ai-resume-analyzer-one-sage.vercel.app](https://ai-resume-analyzer-one-sage.vercel.app)
+- **💻 GitHub Repository**: [https://github.com/Nikita127804/ai-resume-analyzer](https://github.com/Nikita127804/ai-resume-analyzer)
+- **⚡ Live Backend API (Render)**: `https://ai-resume-analyzer-api-tn92.onrender.com`
+
+---
+
+## ✨ Key Features
 
 1. **AI Skill Extraction**: Automatically parses uploaded PDF resumes (`pdf-parse` v1.1.1) and target job descriptions using Google Gemini (`gemini-3.6-flash`) to extract technical skills, tools, and frameworks.
 2. **Vector Embeddings & Semantic Matching**: Generates 3072-dimensional text embeddings (`gemini-embedding-001`) and computes high-precision cosine similarity scores between candidate resumes and job requirements.
@@ -33,7 +41,7 @@
 
 ---
 
-## 📂 Project Architecture
+## 🏗️ Project Architecture
 
 ```text
 ai-resume-analyzer/
@@ -58,7 +66,7 @@ ai-resume-analyzer/
 
 ---
 
-## ⚡ Quick Start (Local Setup)
+## 🚀 Quick Start (Local Setup)
 
 ### Prerequisites
 - Node.js (v18+)
@@ -98,27 +106,5 @@ npm run dev
 
 ---
 
-## 🔍 MongoDB Atlas Vector Search Index Configuration (Optional)
-
-To enable native MongoDB Atlas Vector Search on the `embedding` field:
-1. Log in to **MongoDB Atlas Dashboard** -> select your Cluster -> **Search Indexes**.
-2. Click **Create Search Index** -> choose **JSON Editor** under **Atlas Vector Search**.
-3. Select `Resume` or `JobDescription` collection and paste the following index definition:
-```json
-{
-  "fields": [
-    {
-      "type": "vector",
-      "path": "embedding",
-      "numDimensions": 3072,
-      "similarity": "cosine"
-    }
-  ]
-}
-```
-*(Note: The application also includes an in-memory vector cosine similarity fallback that works out-of-the-box on standard MongoDB deployments).*
-
----
-
 ## 📄 License
-ISC License — B.Tech CSE Final Year Capstone Project.
+ISC License - B.Tech CSE Final Year Capstone Project.
