@@ -93,7 +93,8 @@ exports.sendOtp = async (req, res) => {
     await user.save();
 
     const emailUser = process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : null;
-    const emailPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : null;
+    // Automatically strip all spaces from Google App Password (e.g. "oqhm cehe bkqv ppqe" -> "oqhmcehebkqvppqe")
+    const emailPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : null;
 
     if (emailUser && emailPass) {
       try {
@@ -129,7 +130,7 @@ exports.sendOtp = async (req, res) => {
         });
       } catch (mailErr) {
         console.error('Nodemailer Gmail SMTP Auth Error:', mailErr.message);
-        // Fallback gracefully so password reset flow is never blocked
+        // Fallback gracefully so user is never blocked
         return res.status(200).json({
           message: `OTP generated! Gmail SMTP auth note: ${mailErr.message}. Your OTP code is: ${otp}`,
           otp,
