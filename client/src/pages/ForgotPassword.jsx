@@ -12,7 +12,6 @@ function ForgotPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [infoMsg, setInfoMsg] = useState('')
-  const [fallbackOtp, setFallbackOtp] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const navigate = useNavigate()
 
@@ -22,15 +21,11 @@ function ForgotPassword() {
     if (!email.trim()) return
     setError('')
     setInfoMsg('')
-    setFallbackOtp('')
     setLoading(true)
 
     try {
       const res = await api.post('/auth/send-otp', { email: email.trim() })
-      setInfoMsg(res.data.message || `OTP generated for ${email.trim()}. Check your inbox.`)
-      if (res.data.otp) {
-        setFallbackOtp(res.data.otp)
-      }
+      setInfoMsg(res.data.message || `A 6-digit OTP code has been sent to ${email.trim()}. Please check your Gmail inbox and spam folder.`)
       setStep(2)
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to send OTP to Gmail')
@@ -43,7 +38,7 @@ function ForgotPassword() {
   const handleVerifyAndReset = async (e) => {
     e.preventDefault()
     if (!otp.trim()) {
-      setError('Please enter the 6-digit OTP code')
+      setError('Please enter the 6-digit OTP code received in your Gmail')
       return
     }
     if (newPassword.length < 6) {
@@ -83,7 +78,7 @@ function ForgotPassword() {
           </div>
           <h2 className="text-2xl font-black text-gray-900">
             {step === 1 && 'Forgot Password?'}
-            {step === 2 && 'Enter 6-Digit OTP'}
+            {step === 2 && 'Check Your Gmail Inbox'}
             {step === 3 && 'Password Reset Complete'}
           </h2>
           <p className="text-xs text-gray-500 mt-1">
@@ -137,21 +132,13 @@ function ForgotPassword() {
             {/* Info Message */}
             {infoMsg && (
               <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3.5 rounded-xl text-xs font-medium space-y-1">
-                <p className="font-bold">📩 OTP Status Notification</p>
+                <p className="font-bold">📩 OTP Sent to Gmail!</p>
                 <p>{infoMsg}</p>
               </div>
             )}
 
-            {/* Fallback OTP Badge if SMTP auth failed */}
-            {fallbackOtp && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3 rounded-xl text-center">
-                <p className="text-[10px] font-bold text-blue-700 uppercase">Your OTP Code:</p>
-                <p className="text-2xl font-black text-blue-900 tracking-widest">{fallbackOtp}</p>
-              </div>
-            )}
-
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Enter 6-Digit OTP *</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Enter 6-Digit OTP from Gmail *</label>
               <input
                 type="text"
                 required
