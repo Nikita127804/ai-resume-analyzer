@@ -1,7 +1,7 @@
 const Analysis = require('../models/Analysis');
 const Resume = require('../models/Resume');
 const JobDescription = require('../models/JobDescription');
-const { generateEmbedding, generateSuggestions, rewriteBulletPoint } = require('../utils/llm');
+const { extractSkills, generateEmbedding, generateSuggestions, rewriteBulletPoint } = require('../utils/llm');
 const { cosineSimilarity, calculateSkillMatch } = require('../utils/similarity');
 const { checkAtsFriendliness } = require('../utils/atsChecker');
 
@@ -21,6 +21,20 @@ exports.createAnalysis = async (req, res) => {
     const job = await JobDescription.findOne({ _id: jobId, userId: req.userId });
     if (!job) {
       return res.status(404).json({ message: 'Job description not found' });
+    }
+
+    // Auto-repair missing resume skills if empty
+    if (!resume.extractedSkills || resume.extractedSkills.length === 0) {
+      console.log('Extracting missing skills for resume...');
+      resume.extractedSkills = await extractSkills(resume.rawText);
+      await resume.save();
+    }
+
+    // Auto-repair missing job skills if empty
+    if (!job.extractedSkills || job.extractedSkills.length === 0) {
+      console.log('Extracting missing skills for job...');
+      job.extractedSkills = await extractSkills(job.rawText);
+      await job.save();
     }
 
     // Ensure embeddings exist
@@ -51,7 +65,6 @@ exports.createAnalysis = async (req, res) => {
     );
 
     // 3. Combined Match Score (0 to 100)
-    // 50% weight from Vector Semantic Similarity + 50% weight from Exact Skill Match
     const semanticScore = Math.round(vectorSimilarity * 100);
     const matchScore = Math.min(100, Math.round((semanticScore * 0.5) + (skillMatchScore * 0.5)));
 
@@ -107,15 +120,45 @@ exports.getAnalyses = async (req, res) => {
 exports.getAnalysisById = async (req, res) => {
   try {
     const analysis = await Analysis.findOne({ _id: req.params.id, userId: req.userId })
-      .populate('resumeId', 'fileName rawText extractedSkills')
-      .populate('jobId', 'title company rawText extractedSkills');
+      .populate('resumeId')
+      .populate('jobId');
 
     if (!analysis) {
       return res.status(404).json({ message: 'Analysis not found' });
     }
 
+    // Auto-repair analysis if matching/missing skills were empty due to prior missing skill arrays
+    let updated = false;
+    if (analysis.resumeId && (!analysis.resumeId.extractedSkills || analysis.resumeId.extractedSkills.length === 0)) {
+      analysis.resumeId.extractedSkills = await extractSkills(analysis.resumeId.rawText);
+      await analysis.resumeId.save();
+      updated = true;
+    }
+
+    if (analysis.jobId && (!analysis.jobId.extractedSkills || analysis.jobId.extractedSkills.length === 0)) {
+      analysis.jobId.extractedSkills = await extractSkills(analysis.jobId.rawText);
+      await analysis.jobId.save();
+      updated = true;
+    }
+
+    if (updated || (!analysis.matchingSkills || analysis.matchingSkills.length === 0)) {
+      const { matchingSkills, missingSkills, skillMatchScore } = calculateSkillMatch(
+        analysis.resumeId?.extractedSkills || [],
+        analysis.jobId?.extractedSkills || []
+      );
+      analysis.matchingSkills = matchingSkills;
+      analysis.missingSkills = missingSkills;
+      analysis.skillMatchScore = skillMatchScore;
+
+      const semanticScore = Math.round((analysis.vectorSimilarity || 0) * 100);
+      analysis.matchScore = Math.min(100, Math.round((semanticScore * 0.5) + (skillMatchScore * 0.5)));
+
+      await analysis.save();
+    }
+
     res.json(analysis);
   } catch (err) {
+    console.error('Error fetching analysis details:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -147,6 +190,11 @@ exports.rankJobs = async (req, res) => {
       return res.status(404).json({ message: 'Resume not found' });
     }
 
+    if (!resume.extractedSkills || resume.extractedSkills.length === 0) {
+      resume.extractedSkills = await extractSkills(resume.rawText);
+      await resume.save();
+    }
+
     let resumeEmbedding = resume.embedding;
     if (!resumeEmbedding || resumeEmbedding.length === 0) {
       resumeEmbedding = await generateEmbedding(resume.rawText);
@@ -168,6 +216,11 @@ exports.rankJobs = async (req, res) => {
     const rankedJobs = [];
 
     for (const job of jobs) {
+      if (!job.extractedSkills || job.extractedSkills.length === 0) {
+        job.extractedSkills = await extractSkills(job.rawText);
+        await job.save();
+      }
+
       let jobEmbedding = job.embedding;
       if (!jobEmbedding || jobEmbedding.length === 0) {
         jobEmbedding = await generateEmbedding(job.rawText);
